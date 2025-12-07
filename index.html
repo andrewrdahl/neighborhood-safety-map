@@ -3,54 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <title>Neighborhood Safety Map</title>
-
-  <!-- Leaflet CSS (no SRI) -->
   <link rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
-  <!-- Your own styling -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="map"></div>
 
-<!-- ---------------------------------------------------------
-     1️⃣ Load Leaflet core (must come BEFORE any code that uses L)
-     ---------------------------------------------------------- -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- Plugins (also must load before our custom code) -->
 <script src="https://unpkg.com/leaflet-gpx@1.5.0/gpx.min.js"></script>
 <script src="https://unpkg.com/leaflet-ajax@2.2.1/dist/leaflet.ajax.min.js"></script>
 
-<!-- ---------------------------------------------------------
-     2️⃣ Our custom map script – wrapped in DOMContentLoaded
-     ---------------------------------------------------------- -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
   /* -------------------------------------------------------
      2.1 Initialise the map – fit it to the four corner points
      ------------------------------------------------------- */
-  const map = L.map('map');   // create map container, no centre/zoom yet
+  const map = L.map('map');
 
   // ---- Four coordinates you supplied (lat, lon) ----
   const cornerPoints = [
-    L.latLng(44.915980401831014, -93.29213180874551),
-    L.latLng(44.93910303039243 , -93.29007482943638),
-    L.latLng(44.93838777366788 , -93.27170636411634),
-    L.latLng(44.91610817665654 , -93.2716702766504)
+    L.latLng(44.91967126612724, -93.27477257828512),
+    L.latLng(44.93775563598858, -93.27469685260726),
+    L.latLng(44.93770432963163, -93.2882217152788),
+    L.latLng(44.91957619483672, -93.28835279135043)
   ];
 
   // Build a bounds object that encloses all four points
   const bounds = L.latLngBounds(cornerPoints);
-
-  // Fit the map to those bounds (30 px padding keeps points away from the edge)
   map.fitBounds(bounds, { padding: [30, 30] });
 
   /* -------------------------------------------------------
-     2.2 Add the OpenStreetMap basemap (must keep attribution)
+     2.2 **Add the polygon** that joins the four points
+     ------------------------------------------------------- */
+  const polygon = L.polygon(cornerPoints, {
+    color: '#555555',       // border colour (dark gray)
+    weight: 2,              // border thickness
+    fillColor: '#dddddd',   // interior fill (light gray)
+    fillOpacity: 0.3        // semi‑transparent so the basemap shows through
+  }).addTo(map);
+
+  // Optional: a small popup that explains the shape
+  polygon.bindPopup(
+    '<strong>Patrol Area</strong><br>' +
+    'These four points outline the region your safety club covers.'
+  );
+
+  /* -------------------------------------------------------
+     2.3 Add the OpenStreetMap basemap (must keep attribution)
      ------------------------------------------------------- */
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
@@ -59,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }).addTo(map);
 
   /* -------------------------------------------------------
-     2.3 Load GPX routes (if you have any)
+     2.4 Load GPX routes (if you have any)
      ------------------------------------------------------- */
   fetch('data/routes-index.json')
     .then(r => r.json())
@@ -79,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(err => console.warn('No GPX routes loaded', err));
 
   /* -------------------------------------------------------
-     2.4 Load point data (trash‑cans, hazards, etc.)
+     2.5 Load point data (trash‑cans, hazards, etc.)
      ------------------------------------------------------- */
   const pointLayer = new L.GeoJSON.AJAX('data/points.geojson', {
     pointToLayer: (feature, latlng) => {
@@ -101,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }).addTo(map);
 
-}); // end DOMContentLoaded listener
+}); // end DOMContentLoaded
 </script>
 </body>
 </html>
