@@ -1,1 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neighborhood Safety Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-sA+e2ZcKkFz0vQbVhGxKfBvWJtUjvE1yYwH1h5x2jhk="
+        crossorigin=""/>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
+<div id="map"></div>
+
+<!-- Leaflet core -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-o9N1j0k9YgqU6pV9a4R6jB5T+5V6K9Y5e1D2eZkz7U8="
+        crossorigin=""></script>
+
+<!-- Plugins -->
+<script src="https://unpkg.com/leaflet-gpx@1.5.0/gpx.min.js"></script>
+<script src="https://unpkg.com/leaflet-ajax@2.2.1/dist/leaflet.ajax.min.js"></script>
+
+<script>
+// ---------- Initialise the map ----------
+const map = L.map('map').setView([40.7128, -74.0060], 13); // <-- change to your neighbourhood centre
+
+// OSM tile layer (free, attribution required)
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+// ---------- Load GPX routes ----------
+fetch('data/routes-index.json')
+  .then(r => r.json())
+  .then(list => {
+    list.forEach(item => {
+      const gpx = new L.GPX(`data/${item}`, {
+        async: true,
+        marker_options: {
+          startIconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        }
+      }).addTo(map);
+    });
+  })
+  .catch(err => console.warn('No routes loaded', err));
+
+// ---------- Load point data (CSV or GeoJSON) ----------
+const pointLayer = new L.GeoJSON.AJAX('data/points.geojson', {
+  pointToLayer: function (feature, latlng) {
+    // customize the icon – here we use a trash‑can emoji
+    const icon = L.divIcon({
+      html: '🗑️',
+      className: '',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+    return L.marker(latlng, {icon});
+  },
+  onEachFeature: function (feature, layer) {
+    const props = feature.properties || {};
+    const popup = `<strong>${props.name || 'Location'}</strong><br>
+                   ${props.description || ''}`;
+    if (props.photo) {
+      popup += `<br><img src="${props.photo}" style="max-width:200px;">`;
+    }
+    layer.bindPopup(popup);
+  }
+}).addTo(map);
+</script>
+</body>
+</html>
