@@ -1,34 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Neighborhood Safety Map</title>
-
-  <!-- Leaflet CSS (no integrity) -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
-  <!-- Your own styling -->
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<div id="map"></div>
-
-<!-- Leaflet core JS (no integrity) -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- Plugins -->
-<script src="https://unpkg.com/leaflet-gpx@1.5.0/gpx.min.js"></script>
-<script src="https://unpkg.com/leaflet-ajax@2.2.1/dist/leaflet.ajax.min.js"></script>
-
 <script>
 /* --------------------------------------------------------------
-   1️⃣ Initialise the map
+   1️⃣ Initialise the map – now using a bounding box
    -------------------------------------------------------------- */
-const map = L.map('map').setView([40.7128, -74.0060], 13); // ← change to your neighbourhood centre
 
-// OpenStreetMap basemap (must keep attribution)
+// Create the map instance without a preset centre/zoom
+const map = L.map('map');
+
+// ---- 4 corner points (lat, lon) ----
+const cornerPoints = [
+  L.latLng(44.915980401831014, -93.29213180874551),
+  L.latLng(44.93910303039243 , -93.29007482943638),
+  L.latLng(44.93838777366788 , -93.27170636411634),
+  L.latLng(44.91610817665654 , -93.2716702766504)
+];
+
+// Build a bounds object that encloses all corners
+const bounds = L.latLngBounds(cornerPoints);
+
+// Fit the map to those bounds (adds a little padding so points aren’t flush to the edge)
+map.fitBounds(bounds, { padding: [30, 30] });   // 30 px padding on each side
+
+// ---------------------------------------------------------------
+// 2️⃣ Add the OSM basemap (must keep attribution)
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
   attribution:
@@ -36,10 +29,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 /* --------------------------------------------------------------
-   2️⃣ Load GPX routes
+   3️⃣ Load GPX routes (unchanged)
    -------------------------------------------------------------- */
-// The file `data/routes-index.json` is a simple JSON array of GPX filenames.
-// Example: ["walk-2025-12-01.gpx","walk-2025-12-08.gpx"]
 fetch('data/routes-index.json')
   .then(r => r.json())
   .then(list => {
@@ -58,13 +49,10 @@ fetch('data/routes-index.json')
   .catch(err => console.warn('No GPX routes loaded', err));
 
 /* --------------------------------------------------------------
-   3️⃣ Load point data (trash‑can locations, hazards, …)
+   4️⃣ Load point data (trash‑can locations, hazards, …)
    -------------------------------------------------------------- */
-// You can use either a GeoJSON file (`points.geojson`) or a CSV file (`points.csv`).
-// The example below assumes GeoJSON. If you prefer CSV, just change the URL.
 const pointLayer = new L.GeoJSON.AJAX('data/points.geojson', {
   pointToLayer: (feature, latlng) => {
-    // Custom icon – here a simple trash‑can emoji.
     const icon = L.divIcon({
       html: '🗑️',
       className: '',
@@ -83,5 +71,3 @@ const pointLayer = new L.GeoJSON.AJAX('data/points.geojson', {
   }
 }).addTo(map);
 </script>
-</body>
-</html>
