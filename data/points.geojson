@@ -1,0 +1,28 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Main St Trash Can",
+        "description": "Near the park bench",
+        "photo": "https://example.com/photo1.jpg"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-74.0055, 40.7132]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Sidewalk Pothole",
+        "description": "Large hole near 5th Ave"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-74.0062, 40.7140]
+      }
+    }
+  ]
+}
