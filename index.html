@@ -1,73 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neighborhood Safety Map</title>
+
+  <!-- Leaflet CSS (no SRI) -->
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <!-- Your own styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- ---------------------------------------------------------
+     1️⃣ Load Leaflet core (must come BEFORE any code that uses L)
+     ---------------------------------------------------------- -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Plugins (also must load before our custom code) -->
+<script src="https://unpkg.com/leaflet-gpx@1.5.0/gpx.min.js"></script>
+<script src="https://unpkg.com/leaflet-ajax@2.2.1/dist/leaflet.ajax.min.js"></script>
+
+<!-- ---------------------------------------------------------
+     2️⃣ Our custom map script – wrapped in DOMContentLoaded
+     ---------------------------------------------------------- -->
 <script>
-/* --------------------------------------------------------------
-   1️⃣ Initialise the map – now using a bounding box
-   -------------------------------------------------------------- */
+document.addEventListener('DOMContentLoaded', () => {
 
-// Create the map instance without a preset centre/zoom
-const map = L.map('map');
+  /* -------------------------------------------------------
+     2.1 Initialise the map – fit it to the four corner points
+     ------------------------------------------------------- */
+  const map = L.map('map');   // create map container, no centre/zoom yet
 
-// ---- 4 corner points (lat, lon) ----
-const cornerPoints = [
-  L.latLng(44.915980401831014, -93.29213180874551),
-  L.latLng(44.93910303039243 , -93.29007482943638),
-  L.latLng(44.93838777366788 , -93.27170636411634),
-  L.latLng(44.91610817665654 , -93.2716702766504)
-];
+  // ---- Four coordinates you supplied (lat, lon) ----
+  const cornerPoints = [
+    L.latLng(44.915980401831014, -93.29213180874551),
+    L.latLng(44.93910303039243 , -93.29007482943638),
+    L.latLng(44.93838777366788 , -93.27170636411634),
+    L.latLng(44.91610817665654 , -93.2716702766504)
+  ];
 
-// Build a bounds object that encloses all corners
-const bounds = L.latLngBounds(cornerPoints);
+  // Build a bounds object that encloses all four points
+  const bounds = L.latLngBounds(cornerPoints);
 
-// Fit the map to those bounds (adds a little padding so points aren’t flush to the edge)
-map.fitBounds(bounds, { padding: [30, 30] });   // 30 px padding on each side
+  // Fit the map to those bounds (30 px padding keeps points away from the edge)
+  map.fitBounds(bounds, { padding: [30, 30] });
 
-// ---------------------------------------------------------------
-// 2️⃣ Add the OSM basemap (must keep attribution)
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution:
-    '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-}).addTo(map);
+  /* -------------------------------------------------------
+     2.2 Add the OpenStreetMap basemap (must keep attribution)
+     ------------------------------------------------------- */
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+  }).addTo(map);
 
-/* --------------------------------------------------------------
-   3️⃣ Load GPX routes (unchanged)
-   -------------------------------------------------------------- */
-fetch('data/routes-index.json')
-  .then(r => r.json())
-  .then(list => {
-    list.forEach(fname => {
-      new L.GPX(`data/${fname}`, {
-        async: true,
-        marker_options: {
-          startIconUrl:
-            'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-          shadowUrl:
-            'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-        }
-      }).addTo(map);
-    });
-  })
-  .catch(err => console.warn('No GPX routes loaded', err));
+  /* -------------------------------------------------------
+     2.3 Load GPX routes (if you have any)
+     ------------------------------------------------------- */
+  fetch('data/routes-index.json')
+    .then(r => r.json())
+    .then(list => {
+      list.forEach(fname => {
+        new L.GPX(`data/${fname}`, {
+          async: true,
+          marker_options: {
+            startIconUrl:
+              'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            shadowUrl:
+              'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+          }
+        }).addTo(map);
+      });
+    })
+    .catch(err => console.warn('No GPX routes loaded', err));
 
-/* --------------------------------------------------------------
-   4️⃣ Load point data (trash‑can locations, hazards, …)
-   -------------------------------------------------------------- */
-const pointLayer = new L.GeoJSON.AJAX('data/points.geojson', {
-  pointToLayer: (feature, latlng) => {
-    const icon = L.divIcon({
-      html: '🗑️',
-      className: '',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
-    });
-    return L.marker(latlng, { icon });
-  },
-  onEachFeature: (feature, layer) => {
-    const p = feature.properties || {};
-    let popup = `<strong>${p.name || 'Location'}</strong><br>${p.description || ''}`;
-    if (p.photo) {
-      popup += `<br><img src="${p.photo}" style="max-width:200px;">`;
+  /* -------------------------------------------------------
+     2.4 Load point data (trash‑cans, hazards, etc.)
+     ------------------------------------------------------- */
+  const pointLayer = new L.GeoJSON.AJAX('data/points.geojson', {
+    pointToLayer: (feature, latlng) => {
+      const icon = L.divIcon({
+        html: '🗑️',
+        className: '',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      return L.marker(latlng, { icon });
+    },
+    onEachFeature: (feature, layer) => {
+      const p = feature.properties || {};
+      let popup = `<strong>${p.name || 'Location'}</strong><br>${p.description || ''}`;
+      if (p.photo) {
+        popup += `<br><img src="${p.photo}" style="max-width:200px;">`;
+      }
+      layer.bindPopup(popup);
     }
-    layer.bindPopup(popup);
-  }
-}).addTo(map);
+  }).addTo(map);
+
+}); // end DOMContentLoaded listener
 </script>
+</body>
+</html>
